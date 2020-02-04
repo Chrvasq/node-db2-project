@@ -41,6 +41,47 @@ router.post("/", validateCar, (req, res) => {
     });
 });
 
+// PUT (Update) car
+router.put("/:id", validateCarID, validateCar, (req, res) => {
+  const { vin, make, model, mileage, transmissionType, titleStatus } = req;
+  const { id } = req.car;
+  const changes = { vin, make, model, mileage, transmissionType, titleStatus };
+
+  db("cars")
+    .where({ id })
+    .update(changes)
+    .then(async () => {
+      const car = await db("cars")
+        .where({ id })
+        .first();
+
+      res.status(200).json(car);
+    })
+    .catch(err => {
+      console.log("Error: ", err);
+      res.status(500).json({ message: "Exception", err });
+    });
+});
+
+// DELETE car
+router.delete("/:id", validateCarID, (req, res) => {
+  const { car } = req;
+  const { id } = car;
+
+  db("cars")
+    .where({ id })
+    .del()
+    .then(async () => {
+      const cars = await db("cars");
+
+      res.status(200).json({ deletedCar: car, cars });
+    })
+    .catch(err => {
+      console.log("Error: ", err);
+      res.status(500).json({ message: "Exception", err });
+    });
+});
+
 // custom middleware
 function validateCar(req, res, next) {
   const { vin, make, model, mileage } = req.body;
