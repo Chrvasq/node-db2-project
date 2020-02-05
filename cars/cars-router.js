@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/", (req, res) => {
   db("cars")
     .then(cars => {
-      res.json(cars);
+      res.status(200).json(cars);
     })
     .catch(err => {
       console.log("Error: ", err);
