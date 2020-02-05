@@ -23,11 +23,10 @@ router.get("/:id", validateCarID, (req, res) => {
 
 // POST (Create) new car
 router.post("/", validateCar, (req, res) => {
-  const { vin, make, model, mileage, transmissionType, titleStatus } = req;
-  const newCar = { vin, make, model, mileage, transmissionType, titleStatus };
+  const { validCar } = req;
 
   db("cars")
-    .insert(newCar)
+    .insert(validCar)
     .then(async ([id]) => {
       const car = await db("cars")
         .where({ id })
@@ -43,13 +42,12 @@ router.post("/", validateCar, (req, res) => {
 
 // PUT (Update) car
 router.put("/:id", validateCarID, validateCar, (req, res) => {
-  const { vin, make, model, mileage, transmissionType, titleStatus } = req;
   const { id } = req.car;
-  const changes = { vin, make, model, mileage, transmissionType, titleStatus };
+  const { validCar } = req;
 
   db("cars")
     .where({ id })
-    .update(changes)
+    .update(validCar)
     .then(async () => {
       const car = await db("cars")
         .where({ id })
@@ -85,19 +83,14 @@ router.delete("/:id", validateCarID, (req, res) => {
 // custom middleware
 function validateCar(req, res, next) {
   const { vin, make, model, mileage } = req.body;
-  const transmissionType = req.body.transmissionType || "";
-  const titleStatus = req.body.titleStatus || "";
 
+  // check is body is blank
   Object.keys(req.body).length !== 0
-    ? vin && make && model && mileage
-      ? vin.length <= 17
-        ? ((req.vin = vin),
-          (req.make = make),
-          (req.model = model),
-          (req.mileage = mileage),
-          (req.transmissionType = transmissionType),
-          (req.titleStatus = titleStatus),
-          next())
+    ? // check if vin, make, model and mileage is truthy
+      vin && make && model && mileage
+      ? // check if length of vin is less than or equal to 17
+        vin.length <= 17
+        ? ((req.validCar = { ...req.body }), next())
         : res.status(400).json({
             message: "VIN number must be 17 or less characters. "
           })
@@ -115,6 +108,7 @@ async function validateCarID(req, res, next) {
       .where({ id })
       .first();
 
+    // check if car exists; if exists, add car object to req and call next
     car
       ? ((req.car = car), next())
       : res.status(404).json({ errorMessage: "Car ID does not exist." });
@@ -123,4 +117,5 @@ async function validateCarID(req, res, next) {
     res.status(500).json({ message: "Exception", err });
   }
 }
+
 module.exports = router;
